@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<!-- saved from url=(0056)file:///C:/Users/blerouic/projects/matrix-bzh/index.html -->
+<html lang="fr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Sopra Steria Tech Challenge</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>
+        // Liste des logos tech avec chemin vers les fichiers SVG externes
+        const techLogos = [
+            { name: "Angular", file: "svgs/Angular.svg", greenFile: "svgs-green/Angular.svg" },
+            { name: "Claude AI", file: "svgs/Claude AI.svg", greenFile: "svgs-green/Claude AI.svg" },
+            { name: "CSS3", file: "svgs/Css3.svg", greenFile: "svgs-green/Css3.svg" },
+            { name: "Git", file: "svgs/Git.svg", greenFile: "svgs-green/Git.svg" },
+            { name: "Java", file: "svgs/Java.svg", greenFile: "svgs-green/Java.svg" },
+            { name: "MongoDB", file: "svgs/MongoDB.svg", greenFile: "svgs-green/MongoDB.svg" },
+            { name: "PostgreSQL", file: "svgs/PostgreSQL.svg", greenFile: "svgs-green/PostgreSQL.svg" },
+            { name: "Python", file: "svgs/Python.svg", greenFile: "svgs-green/Python.svg" },
+            { name: "Redis", file: "svgs/Redis.svg", greenFile: "svgs-green/Redis.svg" },
+            { name: "TypeScript", file: "svgs/TypeScript.svg", greenFile: "svgs-green/TypeScript.svg" },
+        ];
+
+        // Charge un SVG et le normalise dans un canvas 100x100.
+        // Les fichiers svgs/ et svgs-green/ ont désormais des viewBox cohérents,
+        // donc green et normal sont traités de façon identique.
+        function loadImage(src) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    const off = Object.assign(document.createElement('canvas'), { width: 100, height: 100 });
+                    off.getContext('2d').drawImage(img, 0, 0, 100, 100);
+                    resolve(off);
+                };
+                img.onerror = () => { console.warn(`Failed to load: ${src}`); resolve(null); };
+                img.src = encodeURI(src);
+            });
+        }
+
+        // Pré-cuit une version verte d'un logo une seule fois (au lieu d'appliquer
+        // ctx.filter à chaque frame, ce qui est très coûteux sur Raspberry Pi).
+        function makeGreenVersion(srcCanvas) {
+            const off = Object.assign(document.createElement('canvas'), { width: 100, height: 100 });
+            const c = off.getContext('2d');
+            c.filter = 'grayscale(100%) sepia(100%) hue-rotate(90deg) saturate(1000%)';
+            c.drawImage(srcCanvas, 0, 0, 100, 100);
+            return off;
+        }
+
+        async function preloadSVGs() {
+            await Promise.all(techLogos.map(async (tech) => {
+                tech.img = await loadImage(tech.file);
+                if (tech.greenFile) {
+                    tech.greenImg = await loadImage(tech.greenFile);
+                } else if (tech.img) {
+                    // Pas de version verte fournie : on la génère une fois pour toutes.
+                    tech.greenImg = makeGreenVersion(tech.img);
+                }
+            }));
+            console.log('SVG preload complete:', techLogos.filter(t => t.img).length, '/', techLogos.length);
+        }
+
+    </script>
+    <style>
+        #speedSelector {
+            padding: 8px 15px;
+            background: rgba(0, 15, 0, 0.8);
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        #speedSelector:hover {
+            background: rgba(0, 50, 0, 0.9);
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.6);
+        }
+        #speedSelector option {
+            background: #000;
+            color: #00ff00;
+        }
+        #colorToggleBtn {
+            padding: 8px 15px;
+            background: rgba(0, 15, 0, 0.8);
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        #colorToggleBtn:hover {
+            background: rgba(0, 50, 0, 0.9);
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.6);
+        }
+        #pauseBtn {
+            padding: 8px 15px;
+            background: rgba(0, 15, 0, 0.8);
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+        .zoom-controls {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .zoom-btn {
+            padding: 8px 12px;
+            background: rgba(0, 15, 0, 0.8);
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            transition: all 0.3s ease;
+            min-width: 40px;
+        }
+        .zoom-btn:hover {
+            background: rgba(0, 50, 0, 0.9);
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.6);
+        }
+        .zoom-display {
+            padding: 8px 12px;
+            background: rgba(0, 15, 0, 0.8);
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.4);
+            min-width: 60px;
+            text-align: center;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+        }
+        #matrixCanvas {
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #ui-panel {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            background: linear-gradient(to right, rgba(0,0,0,0.85) 60%, transparent);
+            padding: 12px 40px 12px 12px;
+            border-radius: 6px;
+        }
+        #ui-panel-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        #ui-panel-header img {
+            height: 48px;
+            flex-shrink: 0;
+        }
+        #ui-panel h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        #ui-panel p {
+            margin: 5px 0 0 0;
+            font-size: 12px;
+        }
+        #controlsContainer {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px 20px;
+            border: 2px solid #00ff00;
+            border-radius: 5px;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-panel">
+        <div id="ui-panel-header">
+            <img src="SOPRASTERIA_logo_RVB.png" alt="Sopra Steria">
+            <h1>Tech Challenge</h1>
+        </div>
+        <p>Ouvrez l'œil... Des logos de technologies se cachent dans le code !</p>
+    </div>
+
+    <div id="controlsContainer">
+        <div class="zoom-controls">
+            <button id="zoomOutBtn" class="zoom-btn">−</button>
+            <div id="zoomDisplay" class="zoom-display">100%</div>
+            <button id="zoomInBtn" class="zoom-btn">+</button>
+        </div>
+
+        <select id="speedSelector">
+            <option value="100">🐢 Très lent (100ms)</option>
+            <option value="80">🐇 Lent (70ms)</option>
+            <option value="60" selected="">⚡ Moyen (50ms)</option>
+            <option value="40">🔥 Rapide (35ms)</option>
+            <option value="20">💥 Ultra rapide (20ms)</option>
+        </select>
+        <button id="pauseBtn">Pause</button>
+
+        <button id="colorToggleBtn" class="">Help</button>
+    </div>
+
+    <canvas id="matrixCanvas" width="952" height="914"></canvas>
+
+    <script>
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        const colorToggleBtn = document.getElementById('colorToggleBtn');
+        const speedSelector = document.getElementById('speedSelector');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const zoomDisplay = document.getElementById('zoomDisplay');
+        const pauseBtn = document.getElementById('pauseBtn');
+
+        // Variable pour tracker la couleur actuelle
+        let isHelpMode = false; // false = mode normal (vert), true = mode help (couleurs originales)
+
+        // Variable pour la vitesse (ms minimum entre deux frames)
+        let animationSpeed = 60; // ms par frame (= la valeur sélectionnée par défaut)
+        let rafId = null;        // id de la boucle requestAnimationFrame
+        let lastFrameTime = 0;   // horodatage de la dernière frame dessinée
+        let isPaused = false;    // pause manuelle via le bouton
+
+        // Boucle d'animation basée sur requestAnimationFrame :
+        // - se cale sur le rafraîchissement écran (pas de frames gaspillées)
+        // - throttle à `animationSpeed` ms (cap le nombre de frames)
+        // - se met automatiquement en veille quand l'onglet est masqué
+        function loop(now) {
+            rafId = requestAnimationFrame(loop);
+            if (now - lastFrameTime < animationSpeed) return;
+            lastFrameTime = now;
+            draw();
+        }
+        function startLoop() {
+            if (rafId === null && !isPaused && !document.hidden) {
+                lastFrameTime = 0;
+                rafId = requestAnimationFrame(loop);
+            }
+        }
+        function stopLoop() {
+            if (rafId !== null) {
+                cancelAnimationFrame(rafId);
+                rafId = null;
+            }
+        }
+
+        // 0% CPU quand la page n'est pas visible.
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) stopLoop();
+            else startLoop();
+        });
+
+        // Variables pour le zoom
+        let zoomLevel = 1; // 1 = 100%
+        const minZoom = 0.5;
+        const maxZoom = 2.5;
+        const zoomStep = 0.5;
+
+        // Facteur de résolution interne du canvas. Le canvas est rendu plus petit
+        // puis agrandi par le CSS (width/height: 100%). Le coût CPU du rendu est
+        // proportionnel au nombre de pixels : 0.85 => ~72% des pixels d'origine.
+        // La taille des glyphes à l'écran reste constante car fontSize est aussi
+        // multiplié par RENDER_SCALE (voir updateColumns).
+        // Plus la valeur est basse, plus on économise du CPU mais plus les glyphes
+        // sont flous (agrandissement par le CSS). 0.85 = bon compromis netteté/CPU.
+        const RENDER_SCALE = 0.85;
+
+        // Ajuste le canvas à la taille de la fenêtre (à résolution réduite)
+        function resizeCanvas() {
+            canvas.width = Math.floor(window.innerWidth * RENDER_SCALE);
+            canvas.height = Math.floor(window.innerHeight * RENDER_SCALE);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Caractères Matrix standards (Katakana japonais et chiffres)
+        const matrixChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ".split("");
+
+
+        // Fonction pour mettre à jour le mode Help/Normal
+        function updateHelpMode(helpMode) {
+            isHelpMode = helpMode;
+            // Pas besoin de vider le cache, les deux versions sont déjà chargées
+        }
+
+        // Ajouter l'écouteur d'événement du bouton
+        colorToggleBtn.addEventListener('click', () => {
+            isHelpMode = !isHelpMode;
+            const newLabel = isHelpMode ? 'Back to normal' : 'Help';
+
+            colorToggleBtn.textContent = newLabel;
+            colorToggleBtn.classList.toggle('red');
+            updateHelpMode(isHelpMode);
+        });
+
+        // Fonction pour mettre à jour le zoom
+        function updateZoom(newZoom) {
+            zoomLevel = Math.max(minZoom, Math.min(maxZoom, newZoom));
+            zoomDisplay.textContent = `${Math.round(zoomLevel * 100)}%`;
+        }
+
+        // Écouteurs pour les boutons de zoom
+        zoomInBtn.addEventListener('click', () => {
+            updateZoom(zoomLevel + zoomStep);
+        });
+
+        zoomOutBtn.addEventListener('click', () => {
+            updateZoom(zoomLevel - zoomStep);
+        });
+
+        pauseBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            if (isPaused) {
+                stopLoop();
+                pauseBtn.textContent = 'Resume';
+            } else {
+                pauseBtn.textContent = 'Pause';
+                startLoop();
+            }
+        });
+
+        let fontSize = 32;
+        // Fonction pour calculer le nombre de colonnes en fonction du zoom
+        function updateColumns() {
+            fontSize = Math.max(1, Math.round(32 * zoomLevel * RENDER_SCALE));
+            return Math.floor(canvas.width / fontSize);
+        }
+
+        let columns = updateColumns();
+
+        // Tableau pour suivre la position verticale (Y) de chaque colonne
+        const rainDrops = [];
+        // Tableau pour tracker si on doit afficher un espace après une icône
+        let skipNextCharacters = {};
+
+        for (let x = 0; x < columns; x++) {
+            // Initialisation à des hauteurs aléatoires au-dessus de l'écran
+            rainDrops[x] = Math.random() * -100;
+            skipNextCharacters[x] = false;
+        }
+
+        function pause() {
+            animationSpeed = 1000; // Ralentit considérablement l'animation pour simuler une pause
+        }
+
+        let animationStarted = false;
+
+        async function startAnimation() {
+            await preloadSVGs();
+            animationStarted = true;
+            startLoop();
+        }
+
+        startAnimation();
+
+        function drawLogo(techData, x, y, logoSize) {
+            // Les versions vertes sont pré-cuites au préchargement (cf. makeGreenVersion),
+            // donc plus aucun ctx.filter ici : un simple drawImage.
+            const img = isHelpMode ? techData.img : (techData.greenImg || techData.img);
+            if (img) {
+                ctx.drawImage(img, x, y, logoSize, logoSize);
+            } else {
+                ctx.fillStyle = '#00ff00';
+                ctx.fillRect(x, y, logoSize, logoSize);
+            }
+        }
+
+        function resetColumns(newColumns) {
+            columns = newColumns;
+            rainDrops.length = 0;
+            skipNextCharacters = {};
+            for (let x = 0; x < columns; x++) {
+                rainDrops[x] = Math.random() * -100;
+                skipNextCharacters[x] = false;
+            }
+        }
+
+        function draw() {
+            const newColumns = updateColumns();
+            if (newColumns !== columns) {
+                resetColumns(newColumns);
+            }
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // font et couleur des caractères : définis une seule fois par frame.
+            ctx.font = fontSize + 'px monospace';
+            ctx.fillStyle = '#0F0';
+
+            const logoSize = fontSize;            // logo et glyphe ont la même taille
+            const logoShiftX = fontSize * 0.2;    // décalage vers la gauche
+
+            for (let i = 0; i < rainDrops.length; i++) {
+                let text = '';
+                let techData = null;
+
+                if (skipNextCharacters[i]) {
+                    skipNextCharacters[i] = false;
+                } else if (Math.random() < 0.02) {
+                    techData = techLogos[Math.floor(Math.random() * techLogos.length)];
+                    skipNextCharacters[i] = true;
+                } else {
+                    text = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+                }
+
+                const x = i * fontSize;
+                const y = rainDrops[i] * fontSize;
+
+                if (techData) {
+                    drawLogo(techData, x - logoShiftX, y, logoSize);
+                    ctx.fillStyle = '#0F0'; // drawLogo peut changer fillStyle (fallback)
+                } else if (!skipNextCharacters[i]) {
+                    ctx.fillText(text, x, y);
+                }
+
+                if (y > canvas.height && Math.random() > 0.975) {
+                    rainDrops[i] = 0;
+                    skipNextCharacters[i] = false;
+                }
+
+                // Fait descendre la goutte
+                rainDrops[i]++;
+            }
+        }
+
+        // Lance la boucle d'animation à environ 30 images par seconde
+        // L'animation sera démarrée après le préchargement des SVG dans startAnimation()
+
+        // Ajouter l'écouteur d'événement pour le sélecteur de vitesse
+        speedSelector.addEventListener('change', (event) => {
+            // La boucle rAF lit animationSpeed à chaque frame : un simple set suffit.
+            animationSpeed = Number.parseInt(event.target.value);
+        });
+    </script>
+
+</body></html>

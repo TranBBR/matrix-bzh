@@ -1,0 +1,10 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>t</title></head>
+<body style="margin:0;background:#000">
+<canvas id="c" width="640" height="120"></canvas>
+<script>
+const files=[["TypeScript","svgs-green/TypeScript.svg"],["MongoDB","svgs-green/MongoDB.svg"],["Postman","svgs-green/Postman.svg"]];
+const ctx=document.getElementById('c').getContext('2d');
+ctx.fillStyle="#001000";ctx.fillRect(0,0,640,120);
+const load=s=>new Promise(r=>{const i=new Image();i.onload=()=>r(i);i.onerror=()=>r(null);i.src=encodeURI(s);});
+(async()=>{for(let k=0;k<files.length;k++){const x=k*210+10,y=10;const img=await load(files[k][1]);ctx.strokeStyle="#003300";ctx.strokeRect(x,y,80,80);if(img)ctx.drawImage(img,x,y,80,80);ctx.fillStyle="#00ff00";ctx.font="12px sans-serif";ctx.fillText(files[k][0],x,y+95);}document.title="DONE";})();
+</script></body></html>
